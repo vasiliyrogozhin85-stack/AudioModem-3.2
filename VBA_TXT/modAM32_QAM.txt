@@ -1,0 +1,123 @@
+﻿Option Explicit
+
+Private Const PI As Double = 3.14159265358979
+
+Private Function AM32_Level(ByVal V As Long) As Double
+    Select Case (V And 3&)
+        Case 0: AM32_Level = -3#
+        Case 1: AM32_Level = -1#
+        Case 3: AM32_Level = 1#
+        Case 2: AM32_Level = 3#
+    End Select
+End Function
+
+Private Function AM32_Bits(ByVal X As Double) As Long
+    If X < -2# Then
+        AM32_Bits = 0
+    ElseIf X < 0# Then
+        AM32_Bits = 1
+    ElseIf X < 2# Then
+        AM32_Bits = 3
+    Else
+        AM32_Bits = 2
+    End If
+End Function
+
+Private Function AM32_Nibble(ByVal IVal As Double, ByVal QVal As Double) As Long
+    AM32_Nibble = AM32_Bits(IVal) * 4 + AM32_Bits(QVal)
+End Function
+
+Public Function AM32_BuildSymbol(ByRef B7() As Byte, ByVal PilotPhase As Long) As Integer()
+    Dim U(0 To AM32_USEFUL - 1) As Double
+    Dim O() As Integer
+    Dim c As Long, d As Long, n As Long, nib As Long
+    Dim IVal As Double, QVal As Double, W As Double, Sc As Double
+    Dim src As Long, X As Double
+
+    Sc = AM32_AMPLITUDE / 52#
+    d = 0
+
+    For c = 0 To AM32_TOTAL_CARRIERS - 1
+        If AM32_IsPilot(c) Then
+            If (PilotPhase And 1&) = 0 Then IVal = 3# Else IVal = -3#
+            QVal = 0#
+        Else
+            If (d And 1&) = 0 Then
+                nib = (B7(d \ 2) \ 16) And &HF&
+            Else
+                nib = B7(d \ 2) And &HF&
+            End If
+            IVal = AM32_Level((nib \ 4) And 3&)
+            QVal = AM32_Level(nib And 3&)
+            d = d + 1
+        End If
+
+        W = 2# * PI * AM32_Freq(c) / AM32_SR
+        For n = 0 To AM32_USEFUL - 1
+            U(n) = U(n) + IVal * Cos(W * n) - QVal * Sin(W * n)
+        Next n
+    Next c
+
+    ReDim O(0 To AM32_SYM - 1)
+    For n = 0 To AM32_CP - 1
+        src = AM32_USEFUL - AM32_CP + n
+        X = U(src) * Sc
+        If X > 32767# Then X = 32767#
+        If X < -32768# Then X = -32768#
+        O(n) = CInt(X)
+    Next n
+
+    For n = 0 To AM32_USEFUL - 1
+        X = U(n) * Sc
+        If X > 32767# Then X = 32767#
+        If X < -32768# Then X = -32768#
+        O(AM32_CP + n) = CInt(X)
+    Next n
+
+    AM32_BuildSymbol = O
+End Function
+
+Public Function AM32_DecodeSymbol(ByRef S() As Integer, ByVal Start As Long, ByVal PilotPhase As Long) As Byte()
+    Dim O(0 To AM32_BYTES_PER_SYM - 1) As Byte
+    Dim c As Long, d As Long, n As Long, P As Long
+    Dim W As Double, IA As Double, QA As Double
+    Dim IVal As Double, QVal As Double, Sc As Double
+    Dim nib As Long
+
+    Sc = AM32_AMPLITUDE / 52#
+    d = 0
+
+    For c = 0 To AM32_TOTAL_CARRIERS - 1
+        W = 2# * PI * AM32_Freq(c) / AM32_SR
+        IA = 0#: QA = 0#
+
+        For n = 0 To AM32_USEFUL - 1
+            P = Start + AM32_CP + n
+            IA = IA + CDbl(S(P)) * Cos(W * n)
+            QA = QA - CDbl(S(P)) * Sin(W * n)
+        Next n
+
+        IVal = (2# * IA / AM32_USEFUL) / Sc
+        QVal = (2# * QA / AM32_USEFUL) / Sc
+
+        If Not AM32_IsPilot(c) Then
+            nib = AM32_Nibble(IVal, QVal)
+            If (d And 1&) = 0 Then
+                O(d \ 2) = CByte(nib * 16)
+            Else
+                O(d \ 2) = O(d \ 2) Or CByte(nib)
+            End If
+            d = d + 1
+        End If
+    Next c
+
+    AM32_DecodeSymbol = O
+End Function
+
+Public Function AM32_TrainingSymbol(ByVal Index As Long) As Integer()
+    Dim B(0 To 6) As Byte, i As Long
+    For i = 0 To 6
+        If (Index And 1&) = 0 Then B(i) = &H22 Else B(i) = &HDD
+    Next i
+    AM32_TrainingSymbol = AM32_BuildSymbol(B, Index)
+End Function

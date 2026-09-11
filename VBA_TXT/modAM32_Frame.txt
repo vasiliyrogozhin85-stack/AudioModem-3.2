@@ -1,0 +1,29 @@
+﻿Option Explicit
+
+Public Sub AM32_MakeHeader(ByRef H() As Byte, ByVal FrameType As Byte, ByVal Mode As Byte, _
+                           ByVal SessionId As Long, ByVal PacketNo As Long, ByVal Total As Long, _
+                           ByVal PayloadLen As Long, ByVal FileSize As Long, ByVal FileCRC As Long, _
+                           ByVal PacketCRC As Long)
+    Dim i As Long, X As Long
+    ReDim H(0 To AM32_HEADER_BYTES - 1)
+    H(0) = Asc("V"): H(1) = Asc("3"): H(2) = 2
+    H(3) = FrameType: H(4) = Mode
+    AM32_PutLong H, 5, SessionId
+    AM32_PutLong H, 9, PacketNo
+    AM32_PutLong H, 13, Total
+    AM32_PutU16 H, 17, PayloadLen
+    AM32_PutLong H, 19, FileSize
+    AM32_PutLong H, 23, FileCRC
+    AM32_PutLong H, 27, PacketCRC
+    H(31) = 0: H(32) = 0: H(33) = 0: H(34) = 0
+    For i = 0 To 34: X = X Xor H(i): Next i
+    H(35) = CByte(X And &HFF&)
+End Sub
+
+Public Function AM32_HeaderOK(ByRef H() As Byte) As Boolean
+    Dim X As Long, i As Long
+    If UBound(H) < 35 Then Exit Function
+    If H(0) <> Asc("V") Or H(1) <> Asc("3") Or H(2) <> 2 Then Exit Function
+    For i = 0 To 34: X = X Xor H(i): Next i
+    AM32_HeaderOK = (H(35) = CByte(X And &HFF&))
+End Function

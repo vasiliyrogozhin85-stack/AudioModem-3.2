@@ -1,0 +1,16 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.openai.audiomodem32'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.openai.audiomodem32'
+        minSdk 26
+        targetSdk 35
+        versionCode 32
+        versionName '3.2'
+    }
+}

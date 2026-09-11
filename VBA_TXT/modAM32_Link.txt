@@ -1,0 +1,32 @@
+﻿Option Explicit
+
+Public Function AM32_SelectMode(ByVal SNRdB As Double, ByVal PER As Double) As Byte
+    If PER > 0.12 Then
+        AM32_SelectMode = AM32_MODE_SAFE
+    ElseIf SNRdB >= 28# And PER < 0.02 Then
+        AM32_SelectMode = AM32_MODE_TURBO
+    ElseIf SNRdB >= 21# And PER < 0.05 Then
+        AM32_SelectMode = AM32_MODE_FAST
+    ElseIf SNRdB >= 14# And PER < 0.08 Then
+        AM32_SelectMode = AM32_MODE_NORMAL
+    Else
+        AM32_SelectMode = AM32_MODE_SAFE
+    End If
+End Function
+
+Public Function AM32_NextLowerMode(ByVal Mode As Byte) As Byte
+    If Mode = 0 Then
+        AM32_NextLowerMode = 0
+    Else
+        AM32_NextLowerMode = Mode - 1
+    End If
+End Function
+
+Public Function AM32_ModeName(ByVal Mode As Byte) As String
+    Select Case Mode
+        Case 0: AM32_ModeName = "SAFE"
+        Case 1: AM32_ModeName = "NORMAL"
+        Case 2: AM32_ModeName = "FAST"
+        Case 3: AM32_ModeName = "TURBO"
+    End Select
+End Function

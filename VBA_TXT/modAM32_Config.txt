@@ -1,0 +1,53 @@
+﻿Option Explicit
+
+Public Const AM32_SR As Long = 48000
+Public Const AM32_BITS As Long = 16
+Public Const AM32_CHANNELS As Long = 1
+
+Public Const AM32_USEFUL As Long = 80
+Public Const AM32_CP As Long = 16
+Public Const AM32_SYM As Long = 96
+
+Public Const AM32_TOTAL_CARRIERS As Long = 16
+Public Const AM32_DATA_CARRIERS As Long = 14
+Public Const AM32_BYTES_PER_SYM As Long = 7
+Public Const AM32_FIRST_HZ As Double = 1800#
+Public Const AM32_SPACING_HZ As Double = 600#
+Public Const AM32_AMPLITUDE As Double = 26000#
+
+Public Const AM32_PAYLOAD_MAX As Long = 1024
+Public Const AM32_HEADER_BYTES As Long = 36
+Public Const AM32_PREAMBLE_SYMS As Long = 8
+Public Const AM32_SYNC_SYMS As Long = 4
+
+Public Const AM32_F_TRAIN As Byte = 1
+Public Const AM32_F_CAPS As Byte = 2
+Public Const AM32_F_DATA As Byte = 3
+Public Const AM32_F_ACK As Byte = 4
+Public Const AM32_F_NACK As Byte = 5
+Public Const AM32_F_END As Byte = 6
+Public Const AM32_F_CANCEL As Byte = 7
+
+Public Const AM32_MODE_SAFE As Byte = 0
+Public Const AM32_MODE_NORMAL As Byte = 1
+Public Const AM32_MODE_FAST As Byte = 2
+Public Const AM32_MODE_TURBO As Byte = 3
+
+Public Function AM32_Freq(ByVal Carrier As Long) As Double
+    AM32_Freq = AM32_FIRST_HZ + Carrier * AM32_SPACING_HZ
+End Function
+
+Public Function AM32_DataCarrierIndex(ByVal DataIndex As Long) As Long
+    ' carrier 3 and 12 are pilots
+    If DataIndex <= 2 Then
+        AM32_DataCarrierIndex = DataIndex
+    ElseIf DataIndex <= 10 Then
+        AM32_DataCarrierIndex = DataIndex + 1
+    Else
+        AM32_DataCarrierIndex = DataIndex + 2
+    End If
+End Function
+
+Public Function AM32_IsPilot(ByVal Carrier As Long) As Boolean
+    AM32_IsPilot = (Carrier = 3 Or Carrier = 12)
+End Function

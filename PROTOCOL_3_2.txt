@@ -1,0 +1,34 @@
+AUDIO MODEM 3.2 — COMMON PROTOCOL
+==================================
+
+Topology:
+Laptop speaker -> Android microphone -> Android file
+Android speaker -> Laptop microphone -> VBA file
+
+Half duplex:
+TRAIN -> CAPS -> DATA -> ACK/NACK -> END
+
+48 kHz mono PCM
+80 useful samples + 16 cyclic prefix = 96 samples/symbol
+16 orthogonal carriers, spacing 600 Hz
+14 carriers carry 16-QAM data
+2 carriers are pilots
+7 payload bytes / multicarrier symbol
+
+Packet payload: <=1024 bytes
+Header: 36 bytes
+CRC32: packet + whole file
+
+The 2 pilot carriers are reserved for channel/phase correction.
+Version 3.2 source includes the pilot-compatible physical layer.
+The next robustness step for difficult rooms is a true complex equalizer using
+the measured pilot phase/amplitude and an interleaver/FEC layer.
+
+Speed:
+14 carriers * 4 bits * 500 symbols/s = 28,000 raw bit/s for data carriers.
+Real payload throughput is lower after preamble/header/ACK.
+This is intentionally lower than the 3.0 33.6 kbit/s target in exchange for
+phone/laptop interoperability and pilot carriers.
+
+The architecture can later recover 33.6 kbit/s by shortening CP, adding more
+carriers or using adaptive 64-QAM on strong channels.

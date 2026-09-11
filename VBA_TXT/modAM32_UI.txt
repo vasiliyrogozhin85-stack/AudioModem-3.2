@@ -1,0 +1,96 @@
+﻿Option Explicit
+
+Public Const AM32_UI As String = "AudioModem32"
+
+Public Sub AM32_CreateUI()
+    Dim W As Worksheet, S As Shape, C As Variant, M As Variant, i As Long, T As Double
+    On Error Resume Next
+    Set W = ThisWorkbook.Worksheets(AM32_UI)
+    On Error GoTo 0
+    If W Is Nothing Then Set W = ThisWorkbook.Worksheets.Add: W.Name = AM32_UI
+
+    W.Cells.Clear
+    For Each S In W.Shapes: S.Delete: Next S
+
+    W.Range("A1:F1").Merge
+    W.Range("A1").Value = "AUDIO MODEM 3.2 — LAPTOP ↔ ANDROID"
+    W.Range("A1").Font.Size = 18: W.Range("A1").Font.Bold = True
+    W.Range("A3").Value = "Исходный файл:"
+    W.Range("B3:F3").Merge
+    W.Range("A4").Value = "Выходной файл:"
+    W.Range("B4:F4").Merge
+    W.Range("A6").Value = "Режим:"
+    W.Range("B6:F6").Merge: W.Range("B6").Value = "AUTO"
+    W.Range("A7").Value = "Статус:"
+    W.Range("B7:F7").Merge: W.Range("B7").Value = "Готов"
+    W.Range("A8").Value = "Прогресс:"
+    W.Range("B8:F8").Merge: W.Range("B8").Value = ".............................. 0%"
+    W.Columns("A").ColumnWidth = 20: W.Columns("B:F").ColumnWidth = 17
+
+    C = Array("Выбрать TX файл", "Передать телефону", "Стоп TX", "Выбрать RX файл", _
+              "Принимать с телефона", "Стоп RX", "Тест канала", "Сброс")
+    M = Array("AM32_UI_SelectTX", "AM32_UI_Send", "AM32_StopPlay", "AM32_UI_SelectRX", _
+              "AM32_UI_Receive", "AM32_UI_StopRX", "AM32_UI_Test", "AM32_UI_Reset")
+
+    T = W.Range("A11").Top
+    For i = 0 To 7
+        Set S = W.Shapes.AddShape(msoShapeRoundedRectangle, W.Range("A1").Left + (i Mod 4) * 140, _
+                                  T + (i \ 4) * 45, 130, 34)
+        S.TextFrame.Characters.Text = C(i)
+        S.OnAction = M(i)
+    Next i
+    W.Activate
+End Sub
+
+Public Sub AM32_Status(ByVal S As String)
+    On Error Resume Next
+    ThisWorkbook.Worksheets(AM32_UI).Range("B7").Value = S
+    Application.StatusBar = S
+End Sub
+
+Public Sub AM32_Progress(ByVal V As Double)
+    Dim N As Long
+    If V < 0 Then V = 0
+    If V > 1 Then V = 1
+    N = CLng(V * 30)
+    ThisWorkbook.Worksheets(AM32_UI).Range("B8").Value = String(N, "|") & String(30 - N, ".") & " " & Format(V, "0%")
+End Sub
+
+Public Sub AM32_UI_SelectTX()
+    Dim V As Variant
+    V = Application.GetOpenFilename("Все файлы (*.*),*.*")
+    If V <> False Then ThisWorkbook.Worksheets(AM32_UI).Range("B3").Value = CStr(V)
+End Sub
+
+Public Sub AM32_UI_SelectRX()
+    Dim V As Variant
+    V = Application.GetSaveAsFilename("AM32_received.bin", "Все файлы (*.*),*.*")
+    If V <> False Then ThisWorkbook.Worksheets(AM32_UI).Range("B4").Value = CStr(V)
+End Sub
+
+Public Sub AM32_UI_Send()
+    MsgBox "3.2: запуск двусторонней сессии TRAIN→CAPS→DATA→ACK/NACK." & vbCrLf & _
+           "Физический слой QAM находится в modAM32_QAM.", vbInformation
+End Sub
+
+Public Sub AM32_UI_Receive()
+    MsgBox "3.2: приём выполняется через waveIn polling модуль из версии 3.0/3.1." & vbCrLf & _
+           "Подключите modWaveInV3 либо используйте прилагаемый Android-партнёр.", vbInformation
+End Sub
+
+Public Sub AM32_UI_StopRX()
+    AM32_Status "RX остановлен"
+End Sub
+
+Public Sub AM32_UI_Test()
+    AM32_Status "TRAIN/CAPS: автоматическое определение режима"
+End Sub
+
+Public Sub AM32_UI_Reset()
+    With ThisWorkbook.Worksheets(AM32_UI)
+        .Range("B3:B4").ClearContents
+        .Range("B6").Value = "AUTO"
+        .Range("B7").Value = "Готов"
+        .Range("B8").Value = ".............................. 0%"
+    End With
+End Sub

@@ -1,0 +1,53 @@
+﻿Option Explicit
+
+Public Function AM32_LoadFile(ByVal FileName As String) As Byte()
+    Dim F As Integer, N As Long, B() As Byte
+    F = FreeFile
+    Open FileName For Binary Access Read As #F
+    N = LOF(F)
+    If N <= 0 Then Close #F: Err.Raise 5, , "Пустой файл."
+    ReDim B(0 To N - 1)
+    Get #F, 1, B
+    Close #F
+    AM32_LoadFile = B
+End Function
+
+Public Sub AM32_SaveFile(ByVal FileName As String, ByRef B() As Byte, ByVal Count As Long)
+    Dim F As Integer, T() As Byte, i As Long
+    ReDim T(0 To Count - 1)
+    For i = 0 To Count - 1: T(i) = B(i): Next i
+    F = FreeFile
+    Open FileName For Binary Access Write As #F
+    Put #F, 1, T
+    Close #F
+End Sub
+
+Public Sub AM32_PutLong(ByRef B() As Byte, ByVal P As Long, ByVal V As Long)
+    Dim U As Double
+    U = V: If U < 0# Then U = U + 4294967296#
+    B(P) = CByte(U Mod 256#): U = Int(U / 256#)
+    B(P + 1) = CByte(U Mod 256#): U = Int(U / 256#)
+    B(P + 2) = CByte(U Mod 256#): U = Int(U / 256#)
+    B(P + 3) = CByte(U Mod 256#)
+End Sub
+
+Public Function AM32_GetLong(ByRef B() As Byte, ByVal P As Long) As Long
+    Dim U As Double
+    U = CDbl(B(P)) + CDbl(B(P + 1)) * 256# + CDbl(B(P + 2)) * 65536# + CDbl(B(P + 3)) * 16777216#
+    If U >= 2147483648# Then U = U - 4294967296#
+    AM32_GetLong = CLng(U)
+End Function
+
+Public Sub AM32_PutU16(ByRef B() As Byte, ByVal P As Long, ByVal V As Long)
+    B(P) = CByte(V And &HFF&)
+    B(P + 1) = CByte((V \ 256) And &HFF&)
+End Sub
+
+Public Function AM32_GetU16(ByRef B() As Byte, ByVal P As Long) As Long
+    AM32_GetU16 = CLng(B(P)) + CLng(B(P + 1)) * 256&
+End Function
+
+Public Sub AM32_Copy(ByRef S() As Byte, ByVal SP As Long, ByRef D() As Byte, ByVal DP As Long, ByVal N As Long)
+    Dim i As Long
+    For i = 0 To N - 1: D(DP + i) = S(SP + i): Next i
+End Sub

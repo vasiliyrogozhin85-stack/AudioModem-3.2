@@ -1,0 +1,6 @@
+1. Install current Android Studio.
+2. Open the Android_Project folder.
+3. Allow Gradle sync.
+4. Build -> Build APK(s).
+5. APK will normally be at:
+   app\build\outputs\apk\debug\app-debug.apk

@@ -1,0 +1,39 @@
+﻿Option Explicit
+
+Private m_Table(0 To 255) As Long
+Private m_Init As Boolean
+
+Private Function AM32_ShiftR(ByVal V As Long) As Long
+    If (V And &H80000000) <> 0 Then
+        AM32_ShiftR = (V And &H7FFFFFFF) \ 2 Or &H40000000
+    Else
+        AM32_ShiftR = V \ 2
+    End If
+End Function
+
+Private Sub AM32_InitCRC()
+    Dim i As Long, j As Long, C As Long
+    For i = 0 To 255
+        C = i
+        For j = 0 To 7
+            If (C And 1&) <> 0 Then
+                C = AM32_ShiftR(C) Xor &HEDB88320
+            Else
+                C = AM32_ShiftR(C)
+            End If
+        Next j
+        m_Table(i) = C
+    Next i
+    m_Init = True
+End Sub
+
+Public Function AM32_CRC(ByRef B() As Byte) As Long
+    Dim C As Long, i As Long, Idx As Long
+    If Not m_Init Then AM32_InitCRC
+    C = &HFFFFFFFF
+    For i = LBound(B) To UBound(B)
+        Idx = (C Xor CLng(B(i))) And &HFF&
+        C = AM32_ShiftR(AM32_ShiftR(AM32_ShiftR(AM32_ShiftR(AM32_ShiftR(AM32_ShiftR(AM32_ShiftR(AM32_ShiftR(C)))))))) Xor m_Table(Idx)
+    Next i
+    AM32_CRC = Not C
+End Function

@@ -1,0 +1,22 @@
+﻿Option Explicit
+
+#If VBA7 Then
+Private Declare PtrSafe Function PlaySound Lib "winmm.dll" Alias "PlaySoundA" ( _
+    ByVal pszSound As String, ByVal hmod As LongPtr, ByVal fdwSound As Long) As Long
+#Else
+Private Declare Function PlaySound Lib "winmm.dll" Alias "PlaySoundA" ( _
+    ByVal pszSound As String, ByVal hmod As Long, ByVal fdwSound As Long) As Long
+#End If
+
+Private Const SND_ASYNC As Long = &H1
+Private Const SND_FILENAME As Long = &H20000
+Private Const SND_NODEFAULT As Long = &H2
+
+Public Sub AM32_Play(ByVal FileName As String)
+    If PlaySound(FileName, 0, SND_FILENAME Or SND_ASYNC Or SND_NODEFAULT) = 0 Then _
+        Err.Raise 5, , "Не удалось воспроизвести WAV."
+End Sub
+
+Public Sub AM32_StopPlay()
+    PlaySound vbNullString, 0, 0
+End Sub

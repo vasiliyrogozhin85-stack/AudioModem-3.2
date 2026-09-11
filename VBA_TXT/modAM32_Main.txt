@@ -1,0 +1,7 @@
+﻿Option Explicit
+
+Public Sub Install_Audio_Modem_32()
+    AM32_CreateUI
+    MsgBox "Audio Modem 3.2 установлен." & vbCrLf & _
+           "Общий протокол совместим с Android-проектом 3.2.", vbInformation
+End Sub
