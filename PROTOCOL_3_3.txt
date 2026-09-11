@@ -1,0 +1,25 @@
+AudioModem 3.3 Universal File Protocol
+
+FILEINFO frame type = 10
+DATA = 11
+ACK = 12
+NACK = 13
+END = 14
+CANCEL = 15
+
+Header: 40 bytes, little-endian
+Magic AM33
+Payload max: 1024 bytes
+
+FILEINFO payload:
+0..3   FI33
+4..5   UTF-8 filename length
+6..    UTF-8 filename
+then:
+4 bytes file size
+4 bytes file CRC32
+4 bytes total packet count
+
+DATA packet offset = packetNo * 1024.
+Receiver may write packets out of order using RandomAccessFile / Binary Access Write.
+Final acceptance requires whole-file CRC32 match.

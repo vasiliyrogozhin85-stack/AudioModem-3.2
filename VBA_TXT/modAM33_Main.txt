@@ -1,0 +1,12 @@
+﻿Option Explicit
+
+Public Sub AM33_DemoPrepareAnyFile()
+    Dim P As String, H() As Byte, B() As Byte, N As Long
+    P = Application.GetOpenFilename("Все файлы (*.*),*.*")
+    If P = "False" Then Exit Sub
+    Randomize
+    N = AM33_BuildFileInfoFrame(P, CLng(Timer * 1000), H, B)
+    MsgBox "Файл готов к передаче." & vbCrLf & _
+           "Имя: " & AM33_BaseName(P) & vbCrLf & _
+           "FILEINFO payload: " & N & " байт", vbInformation
+End Sub

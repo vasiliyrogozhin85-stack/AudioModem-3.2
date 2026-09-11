@@ -1,21 +1,14 @@
-Audio Modem 3.2
-===============
+AudioModem 3.3 Universal File Transfer
 
-Contents:
-VBA_TXT/          Separate TXT files for VBA.
-Android_Project/  Android Studio Java project.
-PROTOCOL_3_2.txt  Common air protocol.
+Goal: transmit any file type without pre-archiving.
 
-Android APK:
-The build environment used to generate this package did not contain Android SDK/Gradle
-and external binary SDK download was unavailable, so an APK could not be honestly
-compiled here. Open Android_Project in Android Studio and Build > Build APK(s).
+Included:
+- VBA_TXT: 3.3 universal file/application-layer modules.
+- Android_Project: buildable Android 3.3 application-layer project.
+- PROTOCOL_3_3.txt: common metadata/data framing.
+- GitHub Actions workflow for building a debug APK.
 
-The source intentionally uses only Android framework APIs and no third-party runtime
-libraries, so the project is small and straightforward to build.
-
-Recommended phone settings:
-- 20–40 cm from the laptop speaker for initial tests.
-- 40–60% volume.
-- Disable Dolby/audio enhancer when possible.
-- Prefer UNPROCESSED microphone source; app falls back to MIC.
+Important engineering status:
+The universal file layer is implemented. The acoustic QAM/record/playback PHY remains
+the 3.2 experimental layer and must be wired to Frame33/UniversalFile33 for complete
+over-the-air transfer. This package should not be described as acoustically verified.

@@ -1,0 +1,24 @@
+﻿Option Explicit
+
+' AudioModem 3.3 Universal File Transfer
+Public Const AM33_VERSION As Byte = 3
+Public Const AM33_PAYLOAD_MAX As Long = 1024
+Public Const AM33_HEADER_BYTES As Long = 40
+
+' Frame types
+Public Const AM33_FT_FILEINFO As Byte = 10
+Public Const AM33_FT_DATA As Byte = 11
+Public Const AM33_FT_ACK As Byte = 12
+Public Const AM33_FT_NACK As Byte = 13
+Public Const AM33_FT_END As Byte = 14
+Public Const AM33_FT_CANCEL As Byte = 15
+
+' Physical layer inherited from 3.2
+Public Const AM33_SAMPLE_RATE As Long = 48000
+Public Const AM33_USEFUL_SAMPLES As Long = 80
+Public Const AM33_CP_SAMPLES As Long = 16
+Public Const AM33_SYMBOL_SAMPLES As Long = 96
+
+' Compatibility limit for classic VBA file APIs.
+' 2,147,483,647 bytes max in this edition.
+Public Const AM33_MAX_FILE_SIZE As Double = 2147483647#

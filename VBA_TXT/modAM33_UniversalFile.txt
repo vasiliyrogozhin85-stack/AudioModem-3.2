@@ -1,0 +1,101 @@
+﻿Option Explicit
+
+Public Type AM33_FileInfo
+    FileName As String
+    FileSize As Long
+    FileCRC As Long
+    TotalPackets As Long
+End Type
+
+Public Function AM33_GetFileInfo(ByVal FullPath As String) As AM33_FileInfo
+    Dim F As Integer, N As Long
+    Dim R As AM33_FileInfo
+    F = FreeFile
+    Open FullPath For Binary Access Read As #F
+    N = LOF(F)
+    Close #F
+    If N < 0 Or CDbl(N) > AM33_MAX_FILE_SIZE Then Err.Raise 6, , "Файл слишком большой для этой VBA-редакции."
+    R.FileName = AM33_BaseName(FullPath)
+    R.FileSize = N
+    R.FileCRC = AM33_CRC32_File(FullPath)
+    If N = 0 Then
+        R.TotalPackets = 0
+    Else
+        R.TotalPackets = (N + AM33_PAYLOAD_MAX - 1) \ AM33_PAYLOAD_MAX
+    End If
+    AM33_GetFileInfo = R
+End Function
+
+Public Function AM33_ReadPacket(ByVal FullPath As String, ByVal PacketNo As Long, ByRef Payload() As Byte) As Long
+    Dim F As Integer, N As Long, P As Long, Take As Long
+    F = FreeFile
+    Open FullPath For Binary Access Read As #F
+    N = LOF(F)
+    P = PacketNo * AM33_PAYLOAD_MAX
+    If P >= N Then Close #F: Err.Raise 9, , "Номер пакета вне файла."
+    Take = AM33_PAYLOAD_MAX
+    If N - P < Take Then Take = N - P
+    ReDim Payload(0 To Take - 1)
+    Get #F, P + 1, Payload
+    Close #F
+    AM33_ReadPacket = Take
+End Function
+
+Public Function AM33_MakeFileInfoPayload(ByVal FullPath As String, ByRef P() As Byte) As Long
+    Dim FI As AM33_FileInfo
+    Dim NameBytes() As Byte
+    Dim NameLen As Long, I As Long, Pos As Long
+    FI = AM33_GetFileInfo(FullPath)
+    NameBytes = StrConv(FI.FileName, vbFromUnicode)
+    NameLen = UBound(NameBytes) - LBound(NameBytes) + 1
+    If NameLen > 900 Then Err.Raise 5, , "Слишком длинное имя файла."
+    ReDim P(0 To 4 + 2 + NameLen + 4 + 4 + 4 - 1)
+    P(0) = Asc("F"): P(1) = Asc("I"): P(2) = Asc("3"): P(3) = Asc("3")
+    AM33_PutU16 P, 4, NameLen
+    Pos = 6
+    For I = 0 To NameLen - 1: P(Pos + I) = NameBytes(I): Next I
+    Pos = Pos + NameLen
+    AM33_PutU32 P, Pos, FI.FileSize: Pos = Pos + 4
+    AM33_PutU32 P, Pos, FI.FileCRC: Pos = Pos + 4
+    AM33_PutU32 P, Pos, FI.TotalPackets: Pos = Pos + 4
+    AM33_MakeFileInfoPayload = Pos
+End Function
+
+Public Function AM33_ParseFileInfoPayload(ByRef P() As Byte, ByVal Count As Long, ByRef FI As AM33_FileInfo) As Boolean
+    Dim NameLen As Long, I As Long, Pos As Long
+    Dim S As String
+    If Count < 18 Then Exit Function
+    If P(0) <> Asc("F") Or P(1) <> Asc("I") Or P(2) <> Asc("3") Or P(3) <> Asc("3") Then Exit Function
+    NameLen = AM33_GetU16(P, 4)
+    If NameLen < 1 Or 6 + NameLen + 12 > Count Then Exit Function
+    For I = 0 To NameLen - 1: S = S & Chr$(P(6 + I)): Next I
+    FI.FileName = S
+    Pos = 6 + NameLen
+    FI.FileSize = AM33_GetU32(P, Pos): Pos = Pos + 4
+    FI.FileCRC = AM33_GetU32(P, Pos): Pos = Pos + 4
+    FI.TotalPackets = AM33_GetU32(P, Pos)
+    AM33_ParseFileInfoPayload = True
+End Function
+
+Public Sub AM33_CreateReceiveFile(ByVal OutputPath As String, ByVal FileSize As Long)
+    Dim F As Integer
+    F = FreeFile
+    Open OutputPath For Binary Access Write As #F
+    If FileSize > 0 Then
+        Seek #F, FileSize
+        Put #F, , CByte(0)
+        Seek #F, FileSize + 1
+    End If
+    Close #F
+End Sub
+
+Public Sub AM33_WritePacket(ByVal OutputPath As String, ByVal PacketNo As Long, ByRef Payload() As Byte, ByVal Count As Long)
+    Dim F As Integer, T() As Byte, I As Long
+    If Count <= 0 Then Exit Sub
+    ReDim T(0 To Count - 1)
+    For I = 0 To Count - 1: T(I) = Payload(I): Next I
+    F = FreeFile
+    Open OutputPath For Binary Access Write As #F
+    Put #F, PacketNo * AM33_PAYLOAD_MAX + 1, T
+    Close #F
+End Sub

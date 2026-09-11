@@ -1,10 +1,8 @@
 name: Build Android APK
-
 on:
   workflow_dispatch:
   push:
     branches: [ main, master ]
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,15 +15,13 @@ jobs:
       - uses: android-actions/setup-android@v3
       - name: Install SDK
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
-      - name: Install Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
       - name: Build debug APK
         working-directory: Android_Project
         run: gradle :app:assembleDebug
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: AudioModem-3.2-debug
+          name: AudioModem-3.3-debug
           path: Android_Project/app/build/outputs/apk/debug/app-debug.apk

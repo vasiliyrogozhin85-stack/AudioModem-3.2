@@ -1,0 +1,76 @@
+﻿Option Explicit
+
+Private mTable(0 To 255) As Long
+Private mReady As Boolean
+
+Private Function U32(ByVal V As Double) As Long
+    If V >= 2147483648# Then V = V - 4294967296#
+    U32 = CLng(V)
+End Function
+
+Private Function RShift8(ByVal V As Long) As Long
+    Dim U As Double
+    U = V
+    If U < 0# Then U = U + 4294967296#
+    RShift8 = U32(Int(U / 256#))
+End Function
+
+Private Sub InitTable()
+    Dim I As Long, J As Long, C As Long
+    If mReady Then Exit Sub
+    For I = 0 To 255
+        C = I
+        For J = 1 To 8
+            If (C And 1) <> 0 Then
+                C = RShift1(C) Xor &HEDB88320
+            Else
+                C = RShift1(C)
+            End If
+        Next J
+        mTable(I) = C
+    Next I
+    mReady = True
+End Sub
+
+Private Function RShift1(ByVal V As Long) As Long
+    Dim U As Double
+    U = V
+    If U < 0# Then U = U + 4294967296#
+    RShift1 = U32(Int(U / 2#))
+End Function
+
+Public Function AM33_CRC32_Bytes(ByRef B() As Byte, ByVal Count As Long) As Long
+    Dim C As Long, I As Long, Idx As Long
+    InitTable
+    C = &HFFFFFFFF
+    For I = 0 To Count - 1
+        Idx = (C Xor B(I)) And &HFF&
+        C = RShift8(C) Xor mTable(Idx)
+    Next I
+    AM33_CRC32_Bytes = C Xor &HFFFFFFFF
+End Function
+
+Public Function AM33_CRC32_File(ByVal FileName As String) As Long
+    Const CHUNK As Long = 32768
+    Dim F As Integer, N As Long, Pos As Long, Take As Long
+    Dim B() As Byte, C As Long, I As Long, Idx As Long
+    InitTable
+    F = FreeFile
+    Open FileName For Binary Access Read As #F
+    N = LOF(F)
+    C = &HFFFFFFFF
+    Pos = 0
+    Do While Pos < N
+        Take = CHUNK
+        If N - Pos < Take Then Take = N - Pos
+        ReDim B(0 To Take - 1)
+        Get #F, Pos + 1, B
+        For I = 0 To Take - 1
+            Idx = (C Xor B(I)) And &HFF&
+            C = RShift8(C) Xor mTable(Idx)
+        Next I
+        Pos = Pos + Take
+    Loop
+    Close #F
+    AM33_CRC32_File = C Xor &HFFFFFFFF
+End Function

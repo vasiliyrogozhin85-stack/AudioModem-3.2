@@ -1,0 +1,38 @@
+﻿Option Explicit
+
+' Integration layer.
+' The acoustic encode/decode functions from AudioModem 3.2 are intentionally
+' kept separate. Call AM33_SendPreparedFrame for each frame in your existing PHY.
+
+Public Type AM33_TransferState
+    SourcePath As String
+    OutputPath As String
+    SessionId As Long
+    FileInfo As AM33_FileInfo
+    Received() As Boolean
+    ReceivedCount As Long
+End Type
+
+Public Function AM33_BuildFileInfoFrame(ByVal FullPath As String, ByVal SessionId As Long, _
+                                        ByRef H() As Byte, ByRef P() As Byte) As Long
+    Dim FI As AM33_FileInfo, N As Long, C As Long
+    FI = AM33_GetFileInfo(FullPath)
+    N = AM33_MakeFileInfoPayload(FullPath, P)
+    C = AM33_CRC32_Bytes(P, N)
+    AM33_MakeHeader H, AM33_FT_FILEINFO, 2, SessionId, 0, FI.TotalPackets, N, FI.FileSize, FI.FileCRC, C
+    AM33_BuildFileInfoFrame = N
+End Function
+
+Public Function AM33_BuildDataFrame(ByVal FullPath As String, ByVal SessionId As Long, ByVal PacketNo As Long, _
+                                    ByRef H() As Byte, ByRef P() As Byte) As Long
+    Dim FI As AM33_FileInfo, N As Long, C As Long
+    FI = AM33_GetFileInfo(FullPath)
+    N = AM33_ReadPacket(FullPath, PacketNo, P)
+    C = AM33_CRC32_Bytes(P, N)
+    AM33_MakeHeader H, AM33_FT_DATA, 2, SessionId, PacketNo, FI.TotalPackets, N, FI.FileSize, FI.FileCRC, C
+    AM33_BuildDataFrame = N
+End Function
+
+Public Function AM33_VerifyCompletedFile(ByVal OutputPath As String, ByVal ExpectedCRC As Long) As Boolean
+    AM33_VerifyCompletedFile = (AM33_CRC32_File(OutputPath) = ExpectedCRC)
+End Function

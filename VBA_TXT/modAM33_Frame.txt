@@ -1,0 +1,44 @@
+﻿Option Explicit
+
+' 40-byte header:
+' 0..3  "AM33"
+' 4     frame type
+' 5     mode
+' 6..9  session id
+' 10..13 packet no
+' 14..17 total packets
+' 18..19 payload length
+' 20..23 file size
+' 24..27 file CRC32
+' 28..31 packet CRC32
+' 32..35 reserved
+' 36..38 reserved
+' 39 XOR checksum of bytes 0..38
+
+Public Sub AM33_MakeHeader(ByRef H() As Byte, ByVal FrameType As Byte, ByVal Mode As Byte, _
+                           ByVal SessionId As Long, ByVal PacketNo As Long, ByVal Total As Long, _
+                           ByVal PayloadLen As Long, ByVal FileSize As Long, ByVal FileCRC As Long, _
+                           ByVal PacketCRC As Long)
+    Dim I As Long, X As Long
+    ReDim H(0 To AM33_HEADER_BYTES - 1)
+    H(0) = Asc("A"): H(1) = Asc("M"): H(2) = Asc("3"): H(3) = Asc("3")
+    H(4) = FrameType: H(5) = Mode
+    AM33_PutU32 H, 6, SessionId
+    AM33_PutU32 H, 10, PacketNo
+    AM33_PutU32 H, 14, Total
+    AM33_PutU16 H, 18, PayloadLen
+    AM33_PutU32 H, 20, FileSize
+    AM33_PutU32 H, 24, FileCRC
+    AM33_PutU32 H, 28, PacketCRC
+    For I = 32 To 38: H(I) = 0: Next I
+    For I = 0 To 38: X = X Xor H(I): Next I
+    H(39) = CByte(X And &HFF&)
+End Sub
+
+Public Function AM33_HeaderOK(ByRef H() As Byte) As Boolean
+    Dim I As Long, X As Long
+    If UBound(H) < 39 Then Exit Function
+    If H(0) <> Asc("A") Or H(1) <> Asc("M") Or H(2) <> Asc("3") Or H(3) <> Asc("3") Then Exit Function
+    For I = 0 To 38: X = X Xor H(I): Next I
+    AM33_HeaderOK = (H(39) = CByte(X And &HFF&))
+End Function

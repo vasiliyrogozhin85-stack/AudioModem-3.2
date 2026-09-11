@@ -1,0 +1,45 @@
+﻿Option Explicit
+
+Public Sub AM33_PutU16(ByRef B() As Byte, ByVal P As Long, ByVal V As Long)
+    B(P) = CByte(V And &HFF&)
+    B(P + 1) = CByte((V \ 256) And &HFF&)
+End Sub
+
+Public Function AM33_GetU16(ByRef B() As Byte, ByVal P As Long) As Long
+    AM33_GetU16 = CLng(B(P)) + CLng(B(P + 1)) * 256&
+End Function
+
+Public Sub AM33_PutU32(ByRef B() As Byte, ByVal P As Long, ByVal V As Long)
+    Dim U As Double
+    U = V
+    If U < 0# Then U = U + 4294967296#
+    B(P) = CByte(U Mod 256#): U = Int(U / 256#)
+    B(P + 1) = CByte(U Mod 256#): U = Int(U / 256#)
+    B(P + 2) = CByte(U Mod 256#): U = Int(U / 256#)
+    B(P + 3) = CByte(U Mod 256#)
+End Sub
+
+Public Function AM33_GetU32(ByRef B() As Byte, ByVal P As Long) As Long
+    Dim U As Double
+    U = CDbl(B(P)) + CDbl(B(P + 1)) * 256# + CDbl(B(P + 2)) * 65536# + CDbl(B(P + 3)) * 16777216#
+    If U >= 2147483648# Then U = U - 4294967296#
+    AM33_GetU32 = CLng(U)
+End Function
+
+Public Sub AM33_Copy(ByRef S() As Byte, ByVal SP As Long, ByRef D() As Byte, ByVal DP As Long, ByVal N As Long)
+    Dim I As Long
+    For I = 0 To N - 1
+        D(DP + I) = S(SP + I)
+    Next I
+End Sub
+
+Public Function AM33_BaseName(ByVal FullPath As String) As String
+    Dim P As Long
+    P = InStrRev(FullPath, "\")
+    If P = 0 Then P = InStrRev(FullPath, "/")
+    If P > 0 Then
+        AM33_BaseName = Mid$(FullPath, P + 1)
+    Else
+        AM33_BaseName = FullPath
+    End If
+End Function
